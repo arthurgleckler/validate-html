@@ -6,7 +6,7 @@
 ;; Version: 1.0
 ;; Created: 11 Sep 2020
 ;; Keywords: languages, tools
-;; Homepage: https://github.com/arthurgleckler/validate-html.el
+;; Homepage: https://github.com/arthurgleckler/validate-html
 ;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is not part of GNU Emacs.
