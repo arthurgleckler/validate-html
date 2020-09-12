@@ -34,8 +34,9 @@
 
 ;;; Code:
 
-(require 'seq)
 (require 'json)
+(require 'seq)
+(require 'url)
 
 ;;;###autoload
 (defun validate-html ()
@@ -52,41 +53,32 @@ Display the resuls.  Requires Curl."
       (setq buffer-read-only nil)
       (erase-buffer)
       (display-buffer output-buffer))
-    (with-current-buffer retrieval-buffer
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (make-process
-       :name "W3C HTML Validator"
-       :buffer retrieval-buffer
-       :command (list "curl"
-                      "-s"
-                      "-H"
-                      "Content-Type: text/html; charset=utf-8"
-                      "--data-binary"
-                      (format "@%s" filename)
-                      "https://validator.w3.org/nu/?out=json&level=error")
-       :sentinel (lambda (process event)
-                   (when (string-equal event "finished\n")
-                     (let ((json
-                            (with-current-buffer (process-buffer process)
-                              (goto-char (point-min))
-                              (json-read))))
-                       (with-current-buffer output-buffer
-                         (insert
-                          (format "Output from W3C HTML Validator on \"%s\"\n"
-                                  filename))
-                         (seq-do
-                          (lambda (m)
-                            (insert
-                             (format "%s:%d: %s\n"
-                                     filename
-                                     (cdr (assq 'lastLine m))
-                                     (cdr (assq 'message m)))))
-                          (cdr (assq 'messages json)))
-                         (compilation-mode)
-                         (setq next-error-last-buffer (current-buffer))
-                         (message "Done.")))))))
-    (message "Sending current buffer to W3C HTML Validator.")))
+    (message "Sending current buffer to W3C HTML Validator.")
+    (let* ((url-request-method "POST")
+           (url-request-data (encode-coding-string (buffer-string) 'utf-8))
+           (url-request-extra-headers
+            '(("Content-Type" . "text/html; charset=utf-8")))
+           (json (with-current-buffer retrieval-buffer
+                   (setq buffer-read-only nil)
+                   (erase-buffer)
+                   (url-insert-file-contents
+                    "https://validator.w3.org/nu/?out=json&level=error")
+                   (json-read))))
+      (with-current-buffer output-buffer
+        (insert
+         (format "Output from W3C HTML Validator on \"%s\"\n"
+                 filename))
+        (seq-do
+         (lambda (m)
+           (insert
+            (format "%s:%d: %s\n"
+                    filename
+                    (cdr (assq 'lastLine m))
+                    (cdr (assq 'message m)))))
+         (cdr (assq 'messages json)))
+        (compilation-mode)
+        (setq next-error-last-buffer (current-buffer))
+        (message "Done.")))))
 
 (provide 'validate-html)
 
