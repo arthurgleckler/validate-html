@@ -59,13 +59,15 @@ Display the resuls."
               (cdr (assq 'messages (json-read))))))
       (with-current-buffer compilation-buffer
         (insert (format "Output from W3C HTML Validator on \"%s\"\n" filename))
-        (seq-do (lambda (m)
-                  (insert
-                   (format "%s:%d: %s\n"
-                           filename
-                           (cdr (assq 'lastLine m))
-                           (cdr (assq 'message m)))))
-                messages)
+        (if (zerop (length messages))
+            (insert "No errors or warnings.")
+          (seq-do (lambda (m)
+                    (insert
+                     (format "%s:%d: %s\n"
+                             filename
+                             (cdr (assq 'lastLine m))
+                             (cdr (assq 'message m)))))
+                  messages))
         (compilation-mode)
         (setq next-error-last-buffer (current-buffer))))))
 
