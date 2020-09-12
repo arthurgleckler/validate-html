@@ -43,12 +43,14 @@
   "Send the current buffer's file to the W3C HTML Validator.
 Display the resuls.  Requires Curl."
   (interactive)
-  (when (buffer-modified-p)
-    (when (y-or-n-p "Save buffer first? ")
-      (save-buffer)))
   (let ((output-buffer (get-buffer-create "*W3C HTML Validator*"))
         (retrieval-buffer (get-buffer-create " *W3C HTML Validator (JSON)*"))
-        (filename (buffer-file-name)))
+        (file-dir (expand-file-name
+                   (if (buffer-file-name)
+                       (file-name-directory (buffer-file-name))
+                     "~")))
+        (filename (and (buffer-file-name)
+                       (file-name-nondirectory (buffer-file-name)))))
     (with-current-buffer output-buffer
       (setq buffer-read-only nil)
       (erase-buffer)
@@ -65,14 +67,15 @@ Display the resuls.  Requires Curl."
                     "https://validator.w3.org/nu/?out=json&level=error")
                    (json-read))))
       (with-current-buffer output-buffer
-        (insert
-         (format "Output from W3C HTML Validator on \"%s\"\n"
-                 filename))
+        (setq default-directory file-dir)
+        (insert "Output from W3C HTML Validator"
+                (if filename (format " on %S" filename) "")
+                "\n")
         (seq-do
          (lambda (m)
            (insert
-            (format "%s:%d: %s\n"
-                    filename
+            (format "%s%d: %s\n"
+                    (if filename (concat filename ":") "")
                     (cdr (assq 'lastLine m))
                     (cdr (assq 'message m)))))
          (cdr (assq 'messages json)))
