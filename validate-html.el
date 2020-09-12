@@ -37,6 +37,7 @@
 (require 'seq)
 (require 'json)
 
+;;;###autoload
 (defun validate-html ()
   "Send the current buffer's file to the W3C HTML Validator.
 Display the resuls.  Requires Curl."
