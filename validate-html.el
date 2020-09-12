@@ -43,6 +43,7 @@ Display the resuls."
   (interactive)
   (let ((compilation-buffer (get-buffer-create "*W3C HTML Validator*"))
         (filename (buffer-file-name)))
+    (unless filename (error "Please save to a file first"))
     (with-current-buffer compilation-buffer
       (setq buffer-read-only nil)
       (erase-buffer)
