@@ -35,6 +35,7 @@
 ;;; Code:
 
 (require 'seq)
+(require 'json)
 
 (defun validate-html ()
   "Send the current buffer's file to the W3C HTML Validator.
