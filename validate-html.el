@@ -70,18 +70,22 @@ Display the resuls.  Requires Curl."
         (setq default-directory file-dir)
         (insert "Output from W3C HTML Validator"
                 (if filename (format " on %S" filename) "")
-                "\n")
-        (seq-do
-         (lambda (m)
-           (insert
-            (format "%s%d: %s\n"
-                    (if filename (concat filename ":") "")
-                    (cdr (assq 'lastLine m))
-                    (cdr (assq 'message m)))))
-         (cdr (assq 'messages json)))
-        (compilation-mode)
-        (setq next-error-last-buffer (current-buffer))
-        (message "Done.")))))
+                "\n\n")
+        (let ((messages (cdr (assq 'messages json))))
+          (if (= 0 (length messages))
+              (insert "Document checking completed."
+                      " No errors or warnings to show.\n")
+            (seq-do
+             (lambda (m)
+               (insert
+                (format "%s%d: %s\n"
+                        (if filename (concat filename ":") "")
+                        (cdr (assq 'lastLine m))
+                        (cdr (assq 'message m)))))
+             messages))
+          (compilation-mode)
+          (setq next-error-last-buffer (current-buffer))
+          (message "Done."))))))
 
 (provide 'validate-html)
 
