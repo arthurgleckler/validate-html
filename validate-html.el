@@ -30,61 +30,43 @@
 ;; the results in a buffer in Compilation mode.  Use standard Compilation
 ;; commands like `next-error' to move through the errors in the source buffer.
 
-;; This file requires that Curl be installed.
-
 ;;; Code:
 
 (require 'seq)
 
 (defun validate-html ()
   "Send the current buffer's file to the W3C HTML Validator.
-Display the resuls.  Requires Curl."
+Display the resuls."
   (interactive)
-  (when (buffer-modified-p)
-    (when (y-or-n-p "Save buffer first? ")
-      (save-buffer)))
-  (let ((output-buffer (get-buffer-create "*W3C HTML Validator*"))
-        (retrieval-buffer (get-buffer-create " *W3C HTML Validator (JSON)*"))
+  (let ((compilation-buffer (get-buffer-create "*W3C HTML Validator*"))
         (filename (buffer-file-name)))
-    (with-current-buffer output-buffer
+    (with-current-buffer compilation-buffer
       (setq buffer-read-only nil)
       (erase-buffer)
-      (display-buffer output-buffer))
-    (with-current-buffer retrieval-buffer
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (make-process
-       :name "W3C HTML Validator"
-       :buffer retrieval-buffer
-       :command (list "curl"
-                      "-s"
-                      "-H"
-                      "Content-Type: text/html; charset=utf-8"
-                      "--data-binary"
-                      (format "@%s" filename)
-                      "https://validator.w3.org/nu/?out=json&level=error")
-       :sentinel (lambda (process event)
-                   (when (string-equal event "finished\n")
-                     (let ((json
-                            (with-current-buffer (process-buffer process)
-                              (goto-char (point-min))
-                              (json-read))))
-                       (with-current-buffer output-buffer
-                         (insert
-                          (format "Output from W3C HTML Validator on \"%s\"\n"
-                                  filename))
-                         (seq-do
-                          (lambda (m)
-                            (insert
-                             (format "%s:%d: %s\n"
-                                     filename
-                                     (cdr (assq 'lastLine m))
-                                     (cdr (assq 'message m)))))
-                          (cdr (assq 'messages json)))
-                         (compilation-mode)
-                         (setq next-error-last-buffer (current-buffer))
-                         (message "Done.")))))))
-    (message "Sending current buffer to W3C HTML Validator.")))
+      (display-buffer compilation-buffer))
+    (message "Sending current buffer to W3C HTML Validator.")
+    (let ((url-request-method "POST")
+	  (url-request-data (encode-coding-string (buffer-string) 'utf-8))
+	  (url-request-extra-headers
+	   `(("Content-Type" . "application/x-www-form-urlencoded")))
+	  (messages
+	   (with-current-buffer
+	       (url-retrieve-synchronously
+		"https://validator.w3.org/nu/?out=json&level=error")
+	     (goto-char (point-min))
+	     (cdr (assq 'messages (json-read))))))
+      (with-current-buffer compilation-buffer
+        (insert (format "Output from W3C HTML Validator on \"%s\"\n" filename))
+        (seq-do (lambda (m)
+		  (insert
+		   (format "%s:%d: %s\n"
+			   filename
+			   (cdr (assq 'lastLine m))
+			   (cdr (assq 'message m)))))
+		messages)
+        (compilation-mode)
+        (setq next-error-last-buffer (current-buffer))
+        (message "Done.")))))
 
 (provide 'validate-html)
 
