@@ -3,7 +3,7 @@
 ;; Copyright (C) 2020 Arthur A. Gleckler
 
 ;; Author: Arthur A. Gleckler <melpa4aag@speechcode.com>
-;; Version: 1.0
+;; Version: 1.1
 ;; Created: 11 Sep 2020
 ;; Keywords: languages, tools
 ;; Homepage: https://github.com/arthurgleckler/validate-html
@@ -37,21 +37,22 @@
 (require 'json)
 (require 'url)
 
-;;;###autoload
-(defun validate-html ()
-  "Send the current buffer's file to the W3C HTML Validator.
-Display the resuls."
-  (interactive)
+(defvar-local validate-html--buffer nil)
+
+(defun validate-html--core (buffer)
+  "Carry out the core of `validate-html' on BUFFER."
   (let ((compilation-buffer (get-buffer-create "*W3C HTML Validator*"))
-        (filename (buffer-file-name)))
+        (filename (buffer-file-name buffer)))
     (unless filename (error "Please save to a file first"))
+    (message "Sending current buffer to W3C HTML Validator.")
     (with-current-buffer compilation-buffer
       (setq buffer-read-only nil)
       (erase-buffer)
       (display-buffer compilation-buffer))
-    (message "Sending current buffer to W3C HTML Validator.")
     (let* ((url-request-method "POST")
-           (url-request-data (encode-coding-string (buffer-string) 'utf-8))
+           (url-request-data
+            (encode-coding-string (with-current-buffer buffer (buffer-string))
+                                  'utf-8))
            (url-request-extra-headers
             `(("Content-Type" . "text/html; charset=utf-8")))
            (messages
@@ -73,7 +74,24 @@ Display the resuls."
                                (cdr (assq 'message m)))))
                     messages)))
         (compilation-mode)
-        (setq next-error-last-buffer (current-buffer))))))
+        (setq next-error-last-buffer buffer)
+        (setq validate-html--buffer buffer)
+        (use-local-map (copy-keymap compilation-mode-map))
+        (local-set-key [remap recompile] 'validate-html--recompile)))
+    (message "Validation complete.")))
+
+;;;###autoload
+(defun validate-html ()
+  "Send the current buffer's file to the W3C HTML Validator.
+Display the resuls."
+  (interactive)
+  (validate-html--core (current-buffer)))
+
+(defun validate-html--recompile ()
+  "Re-run `validate-html' on the same input buffer."
+  (interactive)
+  (when validate-html--buffer
+    (validate-html--core validate-html--buffer)))
 
 (provide 'validate-html)
 
