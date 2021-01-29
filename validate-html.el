@@ -69,7 +69,7 @@ Display the resuls."
                       (insert
                        (format "%s:%d: %s\n"
                                short-filename
-                               (cdr (assq 'lastLine m))
+                               (or (cdr (assq 'lastLine m)) 0)
                                (cdr (assq 'message m)))))
                     messages)))
         (compilation-mode)
