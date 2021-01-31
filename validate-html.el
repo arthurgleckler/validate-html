@@ -3,7 +3,7 @@
 ;; Copyright (C) 2020 Arthur A. Gleckler
 
 ;; Author: Arthur A. Gleckler <melpa4aag@speechcode.com>
-;; Version: 1.1
+;; Version: 1.2
 ;; Created: 11 Sep 2020
 ;; Keywords: languages, tools
 ;; Homepage: https://github.com/arthurgleckler/validate-html
@@ -42,7 +42,7 @@
 (defun validate-html--core (buffer)
   "Carry out the core of `validate-html' on BUFFER."
   (unless (buffer-live-p buffer)
-    (error "Not a live buffer"))
+    (error "Source buffer has been killed."))
   (let ((compilation-buffer (get-buffer-create "*W3C HTML Validator*"))
         (filename (buffer-file-name buffer)))
     (unless filename (error "Please save to a file first"))
