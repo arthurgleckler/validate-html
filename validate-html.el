@@ -41,6 +41,8 @@
 
 (defun validate-html--core (buffer)
   "Carry out the core of `validate-html' on BUFFER."
+  (unless (buffer-live-p buffer)
+    (error "Not a live buffer"))
   (let ((compilation-buffer (get-buffer-create "*W3C HTML Validator*"))
         (filename (buffer-file-name buffer)))
     (unless filename (error "Please save to a file first"))
