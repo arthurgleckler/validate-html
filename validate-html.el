@@ -3,7 +3,7 @@
 ;; Copyright (C) 2020 Arthur A. Gleckler
 
 ;; Author: Arthur A. Gleckler <melpa4aag@speechcode.com>
-;; Version: 1.2
+;; Version: 1.3
 ;; Created: 11 Sep 2020
 ;; Keywords: languages, tools
 ;; Homepage: https://github.com/arthurgleckler/validate-html
@@ -76,7 +76,7 @@
                                (cdr (assq 'message m)))))
                     messages)))
         (compilation-mode)
-        (setq next-error-last-buffer buffer)
+        (setq next-error-last-buffer compilation-buffer)
         (setq validate-html--buffer buffer)
         (use-local-map (copy-keymap compilation-mode-map))
         (local-set-key [remap recompile] 'validate-html--recompile)))
