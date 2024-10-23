@@ -39,6 +39,25 @@
 
 (defvar-local validate-html--buffer nil)
 
+(defun validate-html--content-type (buffer)
+  "Return a suitable HTTP Content-Type for BUFFER."
+  (with-current-buffer buffer
+    (let* ((xml
+            (save-match-data
+              (save-excursion
+                (save-restriction
+                  (widen)
+                  (goto-char (point-min))
+                  (looking-at (regexp-quote "<?xml"))))))
+           (type
+            (if xml "application/xhtml+xml" "text/html"))
+           (charset
+            (symbol-name
+             (coding-system-change-eol-conversion
+              buffer-file-coding-system
+              nil))))
+      (concat type "; charset=" charset))))
+
 (defun validate-html--core (buffer)
   "Carry out the core of `validate-html' on BUFFER."
   (unless (buffer-live-p buffer)
@@ -56,7 +75,8 @@
             (encode-coding-string (with-current-buffer buffer (buffer-string))
                                   'utf-8))
            (url-request-extra-headers
-            `(("Content-Type" . "text/html; charset=utf-8")))
+            (list (cons "Content-Type"
+                        (validate-html--content-type buffer))))
            (messages
             (with-temp-buffer
               (url-insert-file-contents
